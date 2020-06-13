@@ -20,6 +20,10 @@ class PhpPackageTest extends TestCase
     {
         $instance = $this->phpPackageName();
         $this->assertInstanceOf(PhpPackageClass::class, $instance);
+
+        $factory = PhpPackageClass::factory($this->jsonData())
+        $this->assertInstanceOf(PhpPackageClass::class, $factory);
+
     }
 
     public function testJsonSerialize()
