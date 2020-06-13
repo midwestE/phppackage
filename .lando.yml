@@ -1,0 +1,38 @@
+name: phppackagename
+phpversions: 5.3 5.4 5.5 5.6 7.0 7.1 7.2 7.3 7.4
+services:
+  php:
+    type: php:7.4
+    via: cli
+  php7:
+    type: php:7.0
+    via: cli
+  php5:
+    type: php:5.6
+    via: cli
+tooling:
+  composer:
+    service: php
+    description: Run composer commands on php 7.4
+    cmd: composer --ansi
+  composer7:
+    service: php7
+    description: Run composer commands on php 7.0
+    cmd: composer --ansi
+  composer5:
+    service: php5
+    description: Run composer commands on php 5.6
+    cmd: composer --ansi
+  php:
+    service: php
+    cmd: php
+  php7:
+    service: php7
+    cmd: php
+  php5:
+    service: php5
+    cmd: php
+  phpunit:
+    service: php
+    description: Run phpunit testing
+    cmd: php ./vendor/bin/phpunit --verbose --configuration ./phpunit.xml
