@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 PACKAGE_AUTHOR='phppackageauthor'
 PACKAGE_NAME='phppackagename'
 PACKAGE_NAME_CAMEL='PhpPackage'
