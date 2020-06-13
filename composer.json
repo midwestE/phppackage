@@ -4,7 +4,9 @@
   "homepage": "https://github.com/phppackageauthor/phppackagename",
   "license": "MIT",
   "keywords": [
-    "php"
+    "php",
+    "boilerplate",
+    "phppackagename"
   ],
   "authors": [
     {
