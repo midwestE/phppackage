@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Lando",
+      "name": "LANDO XDebug",
       "type": "php",
       "request": "launch",
       "port": 9000,

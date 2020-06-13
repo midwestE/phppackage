@@ -8,6 +8,12 @@ use PHPUnit\Runner\BeforeTestHook;
 use PHPUnit\Runner\AfterTestHook;
 
 /**
+ * Add to php.xml after including this file
+  <extensions>
+    <extension class="Tests\PhpPackageTestRunner"/>
+  </extensions>
+ */
+/**
  * https://phpunit.readthedocs.io/en/8.2/extending-phpunit.html?highlight=BeforeFirstTestHook#extending-the-testrunner
   AfterIncompleteTestHook
   AfterLastTestHook

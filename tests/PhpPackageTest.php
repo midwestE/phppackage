@@ -30,7 +30,8 @@ class PhpPackageTest extends TestCase
         $instance = $this->phpPackageName();
         $json = $instance->getJson();
         $this->assertNotEmpty($json);
+
         $object = json_decode($json);
-        $this->assertIsObject($object);
+        $this->assertObjectHasAttribute('schema', $object);
     }
 }

@@ -1,7 +1,10 @@
 <?php
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/tests/PhpPackageTestRunner.php';
+
+if (interface_exists('\PHPUnit\Runner\BeforeFirstTestHook')) {
+    require_once __DIR__ . '/tests/PhpPackageTestRunner.php';
+}
 
 ini_set('error_reporting', E_ALL);
 ini_set('display_errors', '1');

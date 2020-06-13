@@ -11,7 +11,7 @@ class PhpPackageClass implements \JsonSerializable
         $this->setJson($mixed);
     }
 
-    public static function factory($mixed): PhpPackageClass
+    public static function factory($mixed)
     {
         return new self($mixed);
     }
@@ -21,7 +21,7 @@ class PhpPackageClass implements \JsonSerializable
         return $this->json;
     }
 
-    public function setJson($json): self
+    public function setJson($json)
     {
         $this->json = $json;
         return $this;
