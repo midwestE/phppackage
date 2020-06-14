@@ -3,12 +3,15 @@
 
 namespace PhpPackage;
 
+$command = "php bin/generate --author obijuan --package lightsaber --camelcase LightSaber --description 'New lightsaber package' --namespace 'Obijuan\LightSaber'";
+echo "Usage: lando " . $command;
+
 $params = ['author:', 'package:', 'camelcase:', 'namespace:', 'description:'];
 $options = getopt("", $params);
 
 if (count($options) <> count($params)) {
     //print "Usage: generate -a obijuan -p lightsaber -c LightSaber -d 'New lightsaber package'";
-    print "Usage: generate --author obijuan --package lightsaber --camelcase LightSaber --namespace 'Obijuan\LightSaber' --description 'New lightsaber package'";
+    print "Usage: " . $command;
     die(PHP_EOL);
 }
 
