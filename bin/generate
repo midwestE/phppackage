@@ -1,4 +1,171 @@
 #!/usr/bin/php
 <?php
 
+namespace PhpPackage;
+
+$params = ['author:', 'package:', 'camelcase:', 'namespace:', 'description:'];
+$options = getopt("", $params);
+
+if (count($options) <> count($params)) {
+    //print "Usage: generate -a obijuan -p lightsaber -c LightSaber -d 'New lightsaber package'";
+    print "Usage: generate --author obijuan --package lightsaber --camelcase LightSaber --namespace 'Obijuan\LightSaber' --description 'New lightsaber package'";
+    die(PHP_EOL);
+}
+
 include __DIR__ . '/../vendor/autoload.php';
+
+$DIR = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..');
+$generator = new Generator($DIR, $options);
+$generator->generate();
+
+class Generator
+{
+    public $directory = '';
+    public $options = [];
+    public $excluded = [];
+    public $replacements = [];
+    public $files = [];
+    public $buildPath = '';
+
+    public function __construct(string $directory, array $options)
+    {
+        if (!is_dir($directory) || empty($options)) {
+            throw new \Exception('Directory is not valid or options not present.');
+        }
+        $this->directory = $directory;
+
+        $this->options = $options;
+        $this->replacements = [
+            'phppackageauthor' => $options['author'],
+            'phppackagename' => $options['package'],
+            'PhpPackageNamespace' => $options['namespace'],
+            'phppackagedescription' => $options['description'],
+            'PhpPackageClass' => $options['camelcase'],
+            'phpPackageName' => lcfirst($options['camelcase']),
+            'phppackage' => $options['package'],
+            'PhpPackage' => $options['camelcase'],
+        ];
+
+        $gitignored = file($directory . '/.gitignore', FILE_IGNORE_NEW_LINES);
+        $this->excluded = array_unique(array_merge_recursive($gitignored, ['/.git', '/bin']));
+
+        $this->setDirectories();
+        $this->files = $this->recurseFolders($directory, $this->excluded);
+    }
+
+    public function getOption(string $key): string
+    {
+        return $this->options[$key];
+    }
+
+    public function setDirectories(): bool
+    {
+        $buildFolder = $this->directory . '/build/' . $this->getOption('package');
+        $this->buildPath = $buildFolder;
+        shell_exec("rm -rf '$buildFolder'");
+        return mkdir($buildFolder);
+    }
+
+    public function generate()
+    {
+        foreach ($this->files as $fileInfo) {
+            $sourcePath = $fileInfo->getPathname();
+            $destinationContents = $this->replaceInFile($sourcePath, $this->replacements);
+
+            $pathInfo = pathinfo($fileInfo->getPathname());
+
+            foreach ($this->replacements as $replacement => $value) {
+                $pathInfo['filename'] = str_replace($replacement, $value, $pathInfo['filename']);
+            }
+            // $replacement = $this->searchPartialKey($this->replacements, $pathInfo['filename']);
+            // if (isset($this->replacements[$pathInfo['filename']])) {
+            //     $pathInfo['filename'] = $this->replacements[$pathInfo['filename']];
+            // }
+            $newFileExtension = (!empty($pathInfo['extension'])) ? '.' . $pathInfo['extension'] : '';
+            $newFilepath = str_replace($this->directory, '', $pathInfo['dirname'] . '/' . $pathInfo['filename'] . $newFileExtension);
+            $destinationPath = $this->buildPath . $newFilepath;
+
+
+            print $sourcePath . ' > ' . $destinationPath . PHP_EOL;
+            //destinationContents
+            $this->filePutContents($destinationPath, $destinationContents);
+        }
+    }
+
+    public function recurseFolders(string $directory, array $excluded)
+    {
+        $innerIterator = new \RecursiveDirectoryIterator($directory, \RecursiveDirectoryIterator::SKIP_DOTS);
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator($innerIterator, function ($file, $key, $iterator) use ($directory, $excluded) {
+            $pathFromRoot = str_replace($directory, '', $file->getPathname());
+            if ($this->isIgnored($excluded, $pathFromRoot)) {
+                return false;
+            }
+            if ($iterator->hasChildren()) {
+                return true;
+            }
+            return $file->isFile();
+        }));
+        $files = iterator_to_array($iterator);
+        return $files;
+    }
+
+
+
+    public function replaceInFile(string $filePath, $replacements = [])
+    {
+        $contents = \file_get_contents($filePath);
+        foreach ((array) $replacements as $match => $replacement) {
+            $contents = str_replace($match, $replacement, $contents);
+        }
+        return $contents;
+    }
+
+    public function isIgnored(array $exclusions, string $pathname)
+    {
+        $ignored = $this->searchPartialValue($exclusions, $pathname);
+        return ($ignored === false) ? false : true;
+    }
+
+    public function filePutContents($destination, $contents)
+    {
+        $path = pathinfo($destination);
+        if (!file_exists($path['dirname'])) {
+            mkdir($path['dirname']);
+        }
+        if (file_put_contents($destination, $contents) === false) {
+            throw new \Exception('Could not write contents to ' . $destination);
+        }
+    }
+
+    /**
+     * Searches array values for partial match and returns key
+     *
+     * @param array $array
+     * @param string $term
+     */
+    public function searchPartialValue(array $array, string $term)
+    {
+        foreach ($array as $index => $value) {
+            if (is_string($value) && !empty($term) && strpos($term, $value) === 0) {
+                return $index;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Searches array keys for partial match and returns value
+     *
+     * @param array $array
+     * @param string $term
+     */
+    public function searchPartialKey(array $array, string $term)
+    {
+        foreach ($array as $index => $value) {
+            if (is_string($value) && !empty($term) && strpos($index, $term) === 0) {
+                return $value;
+            }
+        }
+        return false;
+    }
+}
