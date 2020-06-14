@@ -1,6 +1,6 @@
 {
   "name": "phppackageauthor/phppackagename",
-  "description": "Boilerplate package for php projects.",
+  "description": "phppackagedescription",
   "homepage": "https://github.com/phppackageauthor/phppackagename",
   "license": "MIT",
   "keywords": [

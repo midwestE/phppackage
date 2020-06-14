@@ -3,22 +3,10 @@
 
 namespace PhpPackage;
 
-$command = "php bin/generate --author obijuan --package lightsaber --camelcase LightSaber --description 'New lightsaber package' --namespace 'Obijuan\LightSaber'";
-echo "Usage: lando " . $command;
-
-$params = ['author:', 'package:', 'camelcase:', 'namespace:', 'description:'];
-$options = getopt("", $params);
-
-if (count($options) <> count($params)) {
-    //print "Usage: generate -a obijuan -p lightsaber -c LightSaber -d 'New lightsaber package'";
-    print "Usage: " . $command;
-    die(PHP_EOL);
-}
-
 include __DIR__ . '/../vendor/autoload.php';
 
 $DIR = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..');
-$generator = new Generator($DIR, $options);
+$generator = new Generator($DIR);
 $generator->generate();
 
 class Generator
@@ -29,41 +17,117 @@ class Generator
     public $replacements = [];
     public $files = [];
     public $buildPath = '';
+    public $params = [
+        'author' => [
+            'description' => 'Enter the author.  Use all lowercase and no spaces, dashes, or underscores.',
+            'example' => 'greatauthor'
+        ],
+        'project' => [
+            'description' => 'Enter the project name. Use all lowercase and no spaces, dashes, or underscores.',
+            'example' => 'greatproject'
+        ],
+        'camelcase' => [
+            'description' => 'Enter the CamelCase version of the project name.  This is used for class naming so first character should be uppercase.',
+            'example' => 'GreatProject'
+        ],
+        'description' => [
+            'description' => 'Enter the description.  Used in readme',
+            'example' => 'GreatProject authored by GreatAuthor'
+        ],
+        'namespace' => [
+            'description' => 'Enter the namespace.',
+            'example' => 'GreatOrg\GreatProject'
+        ]
+    ];
 
-    public function __construct(string $directory, array $options)
+    public function __construct(string $directory)
     {
-        if (!is_dir($directory) || empty($options)) {
-            throw new \Exception('Directory is not valid or options not present.');
+        if (!is_dir($directory)) {
+            throw new \Exception('Directory is not valid.');
         }
         $this->directory = $directory;
+        $this->loadOptions();
+        $this->createDirectories();
 
-        $this->options = $options;
         $this->replacements = [
-            'phppackageauthor' => $options['author'],
-            'phppackagename' => $options['package'],
-            'PhpPackageNamespace' => $options['namespace'],
-            'phppackagedescription' => $options['description'],
-            'PhpPackageClass' => $options['camelcase'],
-            'phpPackageName' => lcfirst($options['camelcase']),
-            'phppackage' => $options['package'],
-            'PhpPackage' => $options['camelcase'],
+            'phppackageauthor' => $this->getOption('author'),
+            'phppackagename' => $this->getOption('project'),
+            'PhpPackageNamespace' => $this->getOption('namespace'),
+            'phppackagedescription' => $this->getOption('description'),
+            'PhpPackageClass' => $this->getOption('camelcase'),
+            'phpPackageName' => lcfirst($this->getOption('camelcase')),
+            'phppackage' => $this->getOption('project'),
+            'PhpPackage' => $this->getOption('camelcase'),
         ];
 
         $gitignored = file($directory . '/.gitignore', FILE_IGNORE_NEW_LINES);
         $this->excluded = array_unique(array_merge_recursive($gitignored, ['/.git', '/bin']));
-
-        $this->setDirectories();
         $this->files = $this->recurseFolders($directory, $this->excluded);
     }
 
-    public function getOption(string $key): string
+    public function getOption(string $key): ?string
     {
-        return $this->options[$key];
+        return (isset($this->options[$key])) ? $this->options[$key] : null;
     }
 
-    public function setDirectories(): bool
+    public function loadOptions()
     {
-        $buildFolder = $this->directory . '/build/' . $this->getOption('package');
+        $longOptions = [];
+        foreach ($this->params as $property => $definition) {
+            $longOptions[] = $property . ':';
+        }
+        $this->options = getopt("", $longOptions);
+
+        // interactive
+        foreach ($this->params as $property => $definition) {
+            while (empty($this->options[$property])) {
+                $line = readline($definition['description'] . ' ' . $definition['example'] . ' $ ');
+                $this->options[$property] = $line;
+                $this->printLine($this->buildCliCommand() . PHP_EOL);
+            }
+        }
+
+        if (count($this->options) <> count($this->params)) {
+            $this->printLine("Error gathering arguments.");
+            die(PHP_EOL);
+        }
+
+        $this->printLine($this->buildCliCommand() . PHP_EOL);
+
+        $confirm = '';
+        while (empty($confirm) || ($confirm <> 'y' && $confirm <> 'n')) {
+            $confirm = readline('Generate new project? [y/n] $ ');
+        }
+
+        if ($confirm == 'n') {
+            $this->printLine('Exiting');
+            die(PHP_EOL);
+        }
+
+        return $this->options;
+    }
+
+    public function printLine($line)
+    {
+        $output = (is_string($line)) ? $line : var_export($line, true);
+        print $output . PHP_EOL;
+    }
+
+    public function buildCliCommand()
+    {
+        $command = 'php generate';
+        foreach ($this->params as $param => $definition) {
+            $optionValue = $this->getOption($param);
+            if (!empty($this->getOption($param))) {
+                $command .= ' --' . $param . '="' . $optionValue . '"';
+            }
+        }
+        return $command;
+    }
+
+    public function createDirectories(): bool
+    {
+        $buildFolder = $this->directory . '/build/' . $this->getOption('project');
         $this->buildPath = $buildFolder;
         shell_exec("rm -rf '$buildFolder'");
         return mkdir($buildFolder);
@@ -78,6 +142,9 @@ class Generator
             $pathInfo = pathinfo($fileInfo->getPathname());
 
             foreach ($this->replacements as $replacement => $value) {
+                if ($pathInfo['filename'] == 'composer.json' && $replacement == 'PhpPackageNamespace') {
+                    $value = str_replace("\\", "\\\\", $value);
+                }
                 $pathInfo['filename'] = str_replace($replacement, $value, $pathInfo['filename']);
             }
             // $replacement = $this->searchPartialKey($this->replacements, $pathInfo['filename']);
@@ -89,7 +156,7 @@ class Generator
             $destinationPath = $this->buildPath . $newFilepath;
 
 
-            print $sourcePath . ' > ' . $destinationPath . PHP_EOL;
+            $this->printLine($sourcePath . ' > ' . $destinationPath);
             //destinationContents
             $this->filePutContents($destinationPath, $destinationContents);
         }
