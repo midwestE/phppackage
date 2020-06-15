@@ -46,17 +46,17 @@ tooling:
     service: php
     description: Run phpunit 7.4 testing
     cmd:
-      - export COMPOSER_VENDOR_DIR=vendor && export COMPOSER=composer.json && composer install
+      - export COMPOSER_VENDOR_DIR=vendor && export COMPOSER="./composer.json" && composer install
       - php ./phpunit --verbose --configuration ./phpunit.xml
   phpunit7:
     service: php7
     description: Run phpunit 7.1 testing
     cmd:
-      - export COMPOSER_VENDOR_DIR=vendor7 && export COMPOSER=composer7.json && composer install
+      - export COMPOSER_VENDOR_DIR=vendor7 && export COMPOSER="./composer7.json" && composer install
       - php ./phpunit7 --verbose --configuration ./phpunit7.xml
   phpunit5:
     service: php5
     description: Run phpunit 5.6 testing
     cmd:
-      - export COMPOSER_VENDOR_DIR=vendor5 && export COMPOSER=composer5.json && composer install
+      - export COMPOSER_VENDOR_DIR=vendor5 && export COMPOSER="./composer5.json" && composer install
       - php ./phpunit5 --verbose --configuration ./phpunit5.xml
