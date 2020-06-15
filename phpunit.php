@@ -1,6 +1,14 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+
+//$phpVersion = phpversion();
+if (version_compare(PHP_VERSION, '7.2.0', '>=')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+} elseif (version_compare(PHP_VERSION, '7.2.0', '<') && version_compare(PHP_VERSION, '5.7.0', '>')) {
+    require_once __DIR__ . '/vendor7/autoload.php';
+} else {
+    require_once __DIR__ . '/vendor5/autoload.php';
+}
 
 if (interface_exists('\PHPUnit\Runner\BeforeFirstTestHook')) {
     require_once __DIR__ . '/tests/PhpPackageTestRunner.php';

@@ -1,0 +1,25 @@
+{
+  "name": "phppackageauthor/phppackagename",
+  "description": "phppackagedescription",
+  "homepage": "https://github.com/phppackageauthor/phppackagename",
+  "license": "MIT",
+  "keywords": ["php", "boilerplate", "phppackagename"],
+  "authors": [
+    {
+      "name": "phppackageauthor",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.6.0"
+  },
+  "require-dev": {},
+  "autoload": {
+    "psr-4": {
+      "PhpPackageNamespace\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {}
+  }
+}
