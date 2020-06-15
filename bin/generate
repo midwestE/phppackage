@@ -62,15 +62,15 @@ class Generator
 
         $gitignored = file($directory . '/.gitignore', FILE_IGNORE_NEW_LINES);
         $this->excluded = array_unique(array_merge_recursive($gitignored, ['/.git', '/bin']));
-        $this->files = $this->recurseFolders($directory, $this->excluded);
+        $this->files = $this->recurseFolders($directory);
     }
 
-    public function getOption(string $key): ?string
+    protected function getOption(string $key): ?string
     {
         return (isset($this->options[$key])) ? $this->options[$key] : null;
     }
 
-    public function loadOptions()
+    protected function loadOptions()
     {
         $longOptions = [];
         foreach ($this->params as $property => $definition) {
@@ -107,15 +107,15 @@ class Generator
         return $this->options;
     }
 
-    public function printLine($line)
+    protected function printLine($line)
     {
         $output = (is_string($line)) ? $line : var_export($line, true);
         print $output . PHP_EOL;
     }
 
-    public function buildCliCommand()
+    protected function buildCliCommand()
     {
-        $command = 'php generate';
+        $command = 'lando php bin/generate';
         foreach ($this->params as $param => $definition) {
             $optionValue = $this->getOption($param);
             if (!empty($this->getOption($param))) {
@@ -125,7 +125,7 @@ class Generator
         return $command;
     }
 
-    public function createDirectories(): bool
+    protected function createDirectories(): bool
     {
         $buildFolder = $this->directory . '/build/' . $this->getOption('project');
         $this->buildPath = $buildFolder;
@@ -141,36 +141,38 @@ class Generator
             $pathInfo = pathinfo($fileInfo->getPathname());
 
             // double backslash in composer json files (all json?);
-            //if (strpos($pathInfo['filename'], 'composer') === 0 && $pathInfo['extension'] === 'json') {
             if (!empty($pathInfo['extension']) && $pathInfo['extension'] === 'json') {
                 $replacements['PhpPackageNamespace'] =  str_replace("\\", "\\\\", $replacements['PhpPackageNamespace']);
             }
-            $destinationContents = $this->replaceInFile($sourcePath, $replacements);
 
+            // filename replacement
             foreach ($replacements as $replacement => $value) {
                 $pathInfo['filename'] = str_replace($replacement, $value, $pathInfo['filename']);
             }
-            // $replacement = $this->searchPartialKey($this->replacements, $pathInfo['filename']);
-            // if (isset($this->replacements[$pathInfo['filename']])) {
-            //     $pathInfo['filename'] = $this->replacements[$pathInfo['filename']];
-            // }
+
+            // compute new destination path
             $newFileExtension = (!empty($pathInfo['extension'])) ? '.' . $pathInfo['extension'] : '';
             $newFilepath = str_replace($this->directory, '', $pathInfo['dirname'] . '/' . $pathInfo['filename'] . $newFileExtension);
             $destinationPath = $this->buildPath . $newFilepath;
 
-
             $this->printLine($sourcePath . ' > ' . $destinationPath);
-            //destinationContents
+
+            // file contents replacement
+            $destinationContents = $this->replaceInFile($sourcePath, $replacements);
             $this->filePutContents($destinationPath, $destinationContents);
         }
+        // write generator file
+        $regenerate = '#!/bin/bash' . PHP_EOL . $this->buildCliCommand();
+        $this->filePutContents($this->buildPath . '/regenerate.sh', $regenerate);
+        shell_exec('chmod ugo+x ' . $this->buildPath . '/regenerate.sh');
     }
 
-    public function recurseFolders(string $directory, array $excluded)
+    protected function recurseFolders(string $directory)
     {
         $innerIterator = new \RecursiveDirectoryIterator($directory, \RecursiveDirectoryIterator::SKIP_DOTS);
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator($innerIterator, function ($file, $key, $iterator) use ($directory, $excluded) {
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator($innerIterator, function ($file, $key, $iterator) use ($directory) {
             $pathFromRoot = str_replace($directory, '', $file->getPathname());
-            if ($this->isIgnored($excluded, $pathFromRoot)) {
+            if ($this->isGitIgnored($pathFromRoot)) {
                 return false;
             }
             if ($iterator->hasChildren()) {
@@ -182,9 +184,7 @@ class Generator
         return $files;
     }
 
-
-
-    public function replaceInFile(string $filePath, $replacements = [])
+    protected function replaceInFile(string $filePath, $replacements = [])
     {
         $contents = \file_get_contents($filePath);
         foreach ((array) $replacements as $match => $replacement) {
@@ -193,13 +193,7 @@ class Generator
         return $contents;
     }
 
-    public function isIgnored(array $exclusions, string $pathname)
-    {
-        $ignored = $this->searchPartialValue($exclusions, $pathname);
-        return ($ignored === false) ? false : true;
-    }
-
-    public function filePutContents($destination, $contents)
+    protected function filePutContents($destination, $contents)
     {
         $path = pathinfo($destination);
         if (!file_exists($path['dirname'])) {
@@ -210,33 +204,20 @@ class Generator
         }
     }
 
-    /**
-     * Searches array values for partial match and returns key
-     *
-     * @param array $array
-     * @param string $term
-     */
-    public function searchPartialValue(array $array, string $term)
+    protected function isGitIgnored(string $path): bool
     {
-        foreach ($array as $index => $value) {
-            if (is_string($value) && !empty($term) && strpos($term, $value) === 0) {
-                return $index;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Searches array keys for partial match and returns value
-     *
-     * @param array $array
-     * @param string $term
-     */
-    public function searchPartialKey(array $array, string $term)
-    {
-        foreach ($array as $index => $value) {
-            if (is_string($value) && !empty($term) && strpos($index, $term) === 0) {
-                return $value;
+        $exclusions = $this->excluded;
+        foreach ($exclusions as $index => $ignored) {
+            if (is_string($ignored) && !empty($path)) {
+                if ($path == $ignored) {
+                    return true;
+                }
+                if (is_dir($path) && strpos($path, $ignored) !== false) {
+                    return true;
+                }
+                if (is_file($path) && $path == $ignored) {
+                    return true;
+                }
             }
         }
         return false;
