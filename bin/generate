@@ -61,7 +61,7 @@ class Generator
         ];
 
         $gitignored = file($directory . '/.gitignore', FILE_IGNORE_NEW_LINES);
-        $this->excluded = array_unique(array_merge_recursive($gitignored, ['/.git', '/bin']));
+        $this->excluded = array_unique(array_merge_recursive($gitignored, ['/.git', '/bin', '/composer.lock', '/composer7.lock', '/composer5.lock']));
         $this->files = $this->recurseFolders($directory);
     }
 
