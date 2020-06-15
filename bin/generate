@@ -136,15 +136,18 @@ class Generator
     public function generate()
     {
         foreach ($this->files as $fileInfo) {
+            $replacements = $this->replacements;
             $sourcePath = $fileInfo->getPathname();
-            $destinationContents = $this->replaceInFile($sourcePath, $this->replacements);
-
             $pathInfo = pathinfo($fileInfo->getPathname());
 
-            foreach ($this->replacements as $replacement => $value) {
-                if ($pathInfo['filename'] == 'composer.json' && $replacement == 'PhpPackageNamespace') {
-                    $value = str_replace("\\", "\\\\", $value);
-                }
+            // double backslash in composer json files (all json?);
+            //if (strpos($pathInfo['filename'], 'composer') === 0 && $pathInfo['extension'] === 'json') {
+            if (!empty($pathInfo['extension']) && $pathInfo['extension'] === 'json') {
+                $replacements['PhpPackageNamespace'] =  str_replace("\\", "\\\\", $replacements['PhpPackageNamespace']);
+            }
+            $destinationContents = $this->replaceInFile($sourcePath, $replacements);
+
+            foreach ($replacements as $replacement => $value) {
                 $pathInfo['filename'] = str_replace($replacement, $value, $pathInfo['filename']);
             }
             // $replacement = $this->searchPartialKey($this->replacements, $pathInfo['filename']);
