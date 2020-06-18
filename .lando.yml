@@ -17,15 +17,15 @@ tooling:
   composer:
     service: php
     description: Run composer commands on php latest
-    cmd: composer --ansi
+    cmd: cd /app && export COMPOSER_VENDOR_DIR=vendor && export COMPOSER="./composer.json" && composer --ansi
   composer7:
     service: php7
     description: Run composer commands on php 7.2
-    cmd: composer --ansi
+    cmd: cd /app && export COMPOSER_VENDOR_DIR=vendor7 && export COMPOSER="./composer7.json" && composer --ansi
   composer5:
     service: php5
     description: Run composer commands on php 5.6
-    cmd: composer --ansi
+    cmd: cd /app && export COMPOSER_VENDOR_DIR=vendor5 && export COMPOSER="./composer5.json" && composer --ansi
   php:
     service: php
     cmd: php
