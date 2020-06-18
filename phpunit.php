@@ -24,9 +24,7 @@ $_SERVER['SCRIPT_NAME'] = '/index.php';
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REQUEST_URI'] = '/';
-// $_SERVER['SERVER_NAME'] = NULL;
-// $_SERVER['SERVER_SOFTWARE'] = NULL;
-// $_SERVER['HTTP_USER_AGENT'] = NULL;
+$_SERVER['HTTP_USER_AGENT'] = 'phpunit';
 $base_url = $_SERVER['SERVER_PROTOCOL'] . '://' . $_SERVER['HTTP_HOST'];
 
 //define('DRUPAL_ROOT', __DIR__ . '/../web');
