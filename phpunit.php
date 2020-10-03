@@ -26,9 +26,3 @@ $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REQUEST_URI'] = '/';
 $_SERVER['HTTP_USER_AGENT'] = 'phpunit';
 $base_url = $_SERVER['SERVER_PROTOCOL'] . '://' . $_SERVER['HTTP_HOST'];
-
-//define('DRUPAL_ROOT', __DIR__ . '/../web');
-//require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
-//drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-
-//require_once __DIR__ . '/BaseTestCase.php';
